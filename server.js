@@ -9,9 +9,9 @@ let config = require('./config'),
     _ = require('lodash'),
     mqtt = require('mqtt'),
     cbor = require('cbor'),
+    moment = require('moment'),
     Device   = require('@terepac/terepac-models').Device,
-    Asset    = require('@terepac/terepac-models').Asset,
-    Sensor   = require('@terepac/terepac-models').Sensor;
+    Alert    = require('@terepac/terepac-models').Alert;
 
 mongoose.Promise = global.Promise;
 // mongoose.set('debug', true);
@@ -79,18 +79,15 @@ client.on('offline', function () {
 
 client.on('message', function (topic, message) {
 
-    let deviceId, source, version, type;
+    let topicId, type;
     let topics = topic.split('/');
 
     if (topics[1] === 'gateway') {
-        deviceId = topics[0];
-        source = topics[1];
-        version = topics[2];
+        topicId = topics[0];
         type = topics[3];
 
     } else {
-        deviceId = topics[0];
-        version = topics[1];
+        topicId = topics[0];
         type = topics[2];
     }
 
@@ -118,46 +115,125 @@ client.on('message', function (topic, message) {
 
         let data = {
             timestamp: decoded.date,
-            min: null,
-            max: null,
-            avg: null,
-            point: decoded.value,
-            samples: null
+            min: decoded.value,
+            max: decoded.value
         };
 
         switch (type) {
             case 'pressure':
                 data.sensorType = 1;
+                data.sensorCode = 'PI';
+                data.min     = decoded.min;
+                data.max     = decoded.max;
                 break;
             case 'temperature':
                 data.sensorType = 2;
+                data.sensorCode = 'TI';
                 break;
             case 'battery':
                 data.sensorType = 4;
+                data.sensorCode = 'EI';
                 break;
             case 'vibration':
                 data.sensorType = 8;
+                data.sensorCode = 'VI';
                 break;
             case 'humidity':
                 data.sensorType = 9;
+                data.sensorCode = 'CI';
                 break;
             case 'rssi':
                 data.sensorType = 10;
+                data.sensorCode = 'MI';
+                data.min     = decoded.min;
+                data.max     = decoded.max;
                 break;
         }
-        handleData(data, deviceId);
+        handleData(data, topicId);
     });
 });
 
-function handleData(data, deviceId) {
-    /**
-     * 1) Query device to get asset (maybe populate)
-     * 2) Use the asset._id to get any available alerts for this device (maybe populate)
-     * 3) If there are alerts, check if value is out of range
-     * 4) If out of range, get the alert groups from the client
-     * 5) Send SMS/Email(s)
-     */
+function handleData(data, topicId) {
 
+    Device.findOne({ topicId: topicId })
+        .exec(function (err, device) {
+            if (!device || err) {
+                console.log('Device not found');
+                return;
+            }
+
+            if (!device.asset || device.asset === null) {
+                // Device not assigned to an asset
+                return;
+            }
+
+            Alert.find({assets: device.asset, sensorCode: data.sensorCode})
+                .populate('client')
+                .exec(function (err, alerts) {
+                    if (!alerts || err) {
+                        return;
+                    }
+                    let numbers = [];
+
+                    _.forEach(alerts, function (alert) {
+                        let lastSent, timeout;
+                        if (!alert.lastSent) {
+                            lastSent = moment(new Date()).subtract(alert.frequencyMinutes + 5, 'm');
+                        } else {
+                            lastSent = new Date(alert.lastSent);
+                        }
+                        timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
+
+                        if (moment(new Date()).isAfter(timeout)) {
+                            if (data.min < alert.limits.low || data.max > alert.limits.high) {
+
+                                _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
+                                    let alertGroup = _.find(device.client.alertGroups, ['code', alertGroupCode]);
+
+                                    if (alertGroup) {
+                                        _.forEach(alertGroup.contacts, function (contact) {
+                                            if (contact.sms.send) {
+                                                numbers.push(contact.sms.number);
+                                            }
+                                        });
+                                    }
+                                });
+
+                            }
+                        }
+
+                    });
+
+                    if (numbers.length > 0) {
+                        // Update lastSent & lastValue in alert
+                        sendMessages(messages, asset.name, data.sensorCode, data.min, data.max);
+                    }
+                });
+
+        });
+}
+
+function sendMessages(numbers, asset, sensor, min, max) {
+
+    const twilio = require('twilio')('AC1fc0162b12372859a30ee5269ed7ce3c', '6afac94f0174ee757832ab507fdbd2fe');
+    const service = twilio.notify.services('IS1a1e01f021351d6c4b2654f1d85b4fbe');
+    const bindings = numbers.map(number => {
+        return JSON.stringify({ binding_type: 'sms', address: number });
+    });
+
+    const body ='Threshold exceeded for ' + sensor + ' on asset ' + asset + '. MIN: ' + min + ' - MAX:' + max;
+
+    let notification = service.notifications
+        .create({
+            toBinding: bindings,
+            body: body
+        })
+        .then(() => {
+            console.log(notification);
+        })
+        .catch(err => {
+            console.error(err);
+        });
 }
 
 /**
