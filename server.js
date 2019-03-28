@@ -216,7 +216,17 @@ function handleData(data, topicId) {
 
                     if (numbers.length > 0) {
                         // Update lastSent & lastValue in alert
-                        sendMessages(numbers, device.asset.name, data.sensorCode, value, limitString);
+                        Alert.updateMany(
+                            {assets: device.asset._id, sensorCode: data.sensorCode},
+                            {
+                                $set: {
+                                    lastSent: new Date(),
+                                    updated: new Date()
+                                }
+                            },
+                        ).exec(function(err, updateAlert) {
+                            sendMessages(numbers, device.asset.name, data.sensorCode, value, limitString);
+                        });
                     }
                 });
 
