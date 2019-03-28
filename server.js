@@ -225,14 +225,18 @@ function handleData(data, topicId) {
 
 function sendMessages(numbers, asset, sensor, value, limitString) {
 
-    const twilio = require('twilio')('AC1fc0162b12372859a30ee5269ed7ce3c', '6afac94f0174ee757832ab507fdbd2fe');
-    const service = twilio.notify.services('IS1a1e01f021351d6c4b2654f1d85b4fbe');
+    const twilio = require('twilio')(config.twilio.accountSid, config.twilio.authToken);
+    const service = twilio.notify.services(config.twilio.notifySid);
+
     const bindings = numbers.map(number => {
         return JSON.stringify({ binding_type: 'sms', address: number });
     });
 
     const body ='Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value;
 
+    console.log('SMS to ' + numbers);
+    console.log('MESSAGE: ' + body);
+    /*
     let notification = service.notifications
         .create({
             toBinding: bindings,
@@ -244,6 +248,7 @@ function sendMessages(numbers, asset, sensor, value, limitString) {
         .catch(err => {
             console.error(err);
         });
+        */
 }
 
 /**
