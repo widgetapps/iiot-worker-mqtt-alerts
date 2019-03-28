@@ -14,7 +14,6 @@ let config = require('./config'),
     Alert    = require('@terepac/terepac-models').Alert;
 
 mongoose.Promise = global.Promise;
-// mongoose.set('debug', true);
 
 let conn = mongoose.connection;
 conn.on('connecting', function() {
@@ -156,6 +155,7 @@ client.on('message', function (topic, message) {
 function handleData(data, topicId) {
 
     Device.findOne({ topicId: topicId })
+        .populate('asset')
         .exec(function (err, device) {
             if (!device || err) {
                 console.log('Device not found');
@@ -167,16 +167,18 @@ function handleData(data, topicId) {
                 return;
             }
 
-            Alert.find({assets: device.asset, sensorCode: data.sensorCode})
+            Alert.find({assets: device.asset._id, sensorCode: data.sensorCode})
                 .populate('client')
                 .exec(function (err, alerts) {
                     if (!alerts || err) {
                         return;
                     }
+                    let value, limitString;
                     let numbers = [];
 
                     _.forEach(alerts, function (alert) {
                         let lastSent, timeout;
+
                         if (!alert.lastSent) {
                             lastSent = moment(new Date()).subtract(alert.frequencyMinutes + 5, 'm');
                         } else {
@@ -185,7 +187,15 @@ function handleData(data, topicId) {
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
 
                         if (moment(new Date()).isAfter(timeout)) {
-                            if (data.min < alert.limits.low || data.max > alert.limits.high) {
+                            if (data.min < alert.limits.low) {
+                                value = data.min;
+                                limitString = 'minimum';
+                            } else if (data.max > alert.limits.high) {
+                                value = data.max;
+                                limitString = 'maximum';
+                            }
+
+                            if (value) {
 
                                 _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
                                     let alertGroup = _.find(device.client.alertGroups, ['code', alertGroupCode]);
@@ -206,14 +216,14 @@ function handleData(data, topicId) {
 
                     if (numbers.length > 0) {
                         // Update lastSent & lastValue in alert
-                        sendMessages(messages, asset.name, data.sensorCode, data.min, data.max);
+                        sendMessages(numbers, device.asset.name, data.sensorCode, value, limitString);
                     }
                 });
 
         });
 }
 
-function sendMessages(numbers, asset, sensor, min, max) {
+function sendMessages(numbers, asset, sensor, value, limitString) {
 
     const twilio = require('twilio')('AC1fc0162b12372859a30ee5269ed7ce3c', '6afac94f0174ee757832ab507fdbd2fe');
     const service = twilio.notify.services('IS1a1e01f021351d6c4b2654f1d85b4fbe');
@@ -221,7 +231,7 @@ function sendMessages(numbers, asset, sensor, min, max) {
         return JSON.stringify({ binding_type: 'sms', address: number });
     });
 
-    const body ='Threshold exceeded for ' + sensor + ' on asset ' + asset + '. MIN: ' + min + ' - MAX:' + max;
+    const body ='Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value;
 
     let notification = service.notifications
         .create({
