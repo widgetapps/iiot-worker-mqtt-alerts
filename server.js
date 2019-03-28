@@ -41,7 +41,6 @@ conn.on('disconnected', function() {
 mongoose.connect(config.db, config.dbOptions);
 
 let client  = mqtt.connect(config.mqtt, config.mqttoptions);
-let amqp = require('amqplib').connect(config.amqp);
 
 console.log('Started on IP ' + config.ip + '. NODE_ENV=' + process.env.NODE_ENV);
 
