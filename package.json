@@ -1,5 +1,5 @@
 {
-  "name": "terepac-worker-mqtt-slerts",
+  "name": "terepac-worker-mqtt-alerts",
   "version": "0.1.0",
   "description": "Alert Worker",
   "main": "server.js",
