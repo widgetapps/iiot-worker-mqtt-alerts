@@ -89,6 +89,8 @@ client.on('message', function (topic, message) {
         type = topics[2];
     }
 
+    console.log('Message received: ' + topicId + ':' + type);
+
     // console.log('Message from device ' + deviceId + ' of type ' + type);
 
     let validTypes = ['pressure', 'temperature', 'battery', 'rssi', 'humidity', 'vibration'];
@@ -156,6 +158,11 @@ function handleData(data, topicId) {
     Device.findOne({ topicId: topicId })
         .populate('asset')
         .exec(function (err, device) {
+            if (err) {
+                console.log('Error getting device: ' + err);
+                return;
+            }
+
             if (!device || err) {
                 console.log('Device not found');
                 return;
@@ -163,6 +170,7 @@ function handleData(data, topicId) {
 
             if (!device.asset || device.asset === null) {
                 // Device not assigned to an asset
+                console.log('Device not assigned to an asset.');
                 return;
             }
 
