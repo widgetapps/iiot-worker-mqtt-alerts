@@ -182,6 +182,9 @@ function handleData(data, topicId) {
                     }
 
                     console.log(alerts.length + ' alerts found for device ' + device._id + ' with sensor code ' + data.sensorCode);
+                    if (alerts.length > 0) {
+                        console.log(JSON.stringify(alerts));
+                    }
 
                     let value, limitString;
                     let numbers = [];
