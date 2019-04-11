@@ -199,6 +199,8 @@ function handleData(data, topicId) {
                         }
                         // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
+                        console.log('Last Sent: ' + lastSent);
+                        console.log('Timeout: ' + timeout);
 
                         // Check if the message timeout has passed
                         if (moment(new Date()).isAfter(timeout)) {
