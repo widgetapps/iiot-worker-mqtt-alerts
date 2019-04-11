@@ -14,5 +14,8 @@ module.exports = {
         accountSid: process.env.TWILIO_ACCOUNT_SID,
         authToken: process.env.TWILIO_AUTH_TOKEN,
         notifySid: process.env.TWILIO_NOTIFY_SERVICE_SID
+    },
+    mandrill: {
+        apiKey: process.env.MANDRILL_API_KEY
     }
 };

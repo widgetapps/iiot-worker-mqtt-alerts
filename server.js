@@ -8,6 +8,7 @@ let config = require('./config'),
     mongoose = require('mongoose'),
     _ = require('lodash'),
     mqtt = require('mqtt'),
+    mandrill = require('mandrill-api'),
     cbor = require('cbor'),
     moment = require('moment'),
     Device   = require('@terepac/terepac-models').Device,
@@ -182,7 +183,8 @@ function handleData(data, topicId) {
                     }
 
                     let value, limitString;
-                    let numbers = [];
+                    let numbers = [],
+                        emails = [];
 
                     //console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
 
@@ -233,6 +235,12 @@ function handleData(data, topicId) {
                                             if (contact.sms.send) {
                                                 numbers.push(contact.sms.number);
                                             }
+                                            if (contact.email.send) {
+                                                emails.push({
+                                                    email: contact.email.address,
+                                                    name: contact.name
+                                                });
+                                            }
                                         });
                                     }
                                 });
@@ -254,7 +262,7 @@ function handleData(data, topicId) {
                                 }
                             },
                         ).exec(function(err, updateAlert) {
-                            sendMessages(numbers, device.asset.name, data.sensorCode, value, limitString);
+                            sendMessages(numbers, emails, device.asset.name, data.sensorCode, value, limitString);
                         });
                     }
                 });
@@ -262,32 +270,84 @@ function handleData(data, topicId) {
         });
 }
 
-function sendMessages(numbers, asset, sensor, value, limitString) {
+function sendMessages(numbers, emails, asset, sensor, value, limitString) {
 
-    const twilio = require('twilio')(config.twilio.accountSid, config.twilio.authToken);
-    const service = twilio.notify.services(config.twilio.notifySid);
+    if (numbers.length > 0) {
 
-    const bindings = numbers.map(number => {
-        return JSON.stringify({ binding_type: 'sms', address: number });
-    });
+        const twilio = require('twilio')(config.twilio.accountSid, config.twilio.authToken);
+        const service = twilio.notify.services(config.twilio.notifySid);
 
-    const body ='Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value;
-
-    //console.log('SMS to ' + JSON.stringify(numbers));
-    //console.log('MESSAGE: ' + body);
-
-    let notification = service.notifications
-        .create({
-            toBinding: bindings,
-            body: body
-        })
-        .then(() => {
-            console.log(notification);
-        })
-        .catch(err => {
-            console.error(err);
+        const bindings = numbers.map(number => {
+            return JSON.stringify({ binding_type: 'sms', address: number });
         });
 
+        const body ='Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value;
+
+        //console.log('SMS to ' + JSON.stringify(numbers));
+        //console.log('MESSAGE: ' + body);
+
+        let notification = service.notifications
+            .create({
+                toBinding: bindings,
+                body: body
+            })
+            .then(() => {
+                console.log(notification);
+                if (emails.length > 0) {
+                    sendEmails(emails, asset, sensor, value, limitString);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                if (emails.length > 0) {
+                    sendEmails(emails, asset, sensor, value, limitString);
+                }
+            });
+
+    } else {
+        if (emails.length > 0) {
+            sendEmails(emails, asset, sensor, value, limitString);
+        }
+    }
+
+}
+
+function sendEmails(emails, asset, sensor, value, limitString) {
+    let mandrillClient = mandrill.Mandrill(config.mandrill.apiKey);
+
+    let async = false;
+    let ip_pool = "Main Pool";
+    let send_at = "example send_at";
+
+    let message = {
+        html: '<p>Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value + '</p>',
+        text: 'Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value,
+        subject: '[Alert] Threshold exceeded',
+        from_email: 'alerts@terepac.one',
+        from_name: 'ONE Platform',
+        to: emails,
+        headers: {
+            'Reply-To': 'support@terepac.one'
+        },
+        important: true,
+        track_opens: false,
+        track_clicks: false,
+        auto_text: false,
+        auto_html: false,
+        inline_css: true,
+        url_strip_qs: false,
+        preserve_recipients: false,
+        view_content_link: false,
+        merge: true,
+        async: true
+    };
+
+    mandrillClient.messages.send({"message": message, "async": async, "ip_pool": ip_pool, "send_at": send_at}, function(result) {
+        console.log(result);
+    }, function(e) {
+        // Mandrill returns the error as an object with name and message keys
+        console.log('A mandrill error occurred: ' + e.name + ' - ' + e.message);
+    });
 }
 
 /**
