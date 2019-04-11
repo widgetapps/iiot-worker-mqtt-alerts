@@ -14,6 +14,8 @@ let config = require('./config'),
     Device   = require('@terepac/terepac-models').Device,
     Alert    = require('@terepac/terepac-models').Alert;
 
+console.log(config.mandrill.apiKey);
+
 let mandrillClient = mandrill.Mandrill(config.mandrill.apiKey);
 
 mongoose.Promise = global.Promise;
