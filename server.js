@@ -181,8 +181,8 @@ function handleData(data, topicId) {
                         return;
                     }
 
-                    console.log(alerts.length + ' alerts found for device ' + device._id + ' with sensor code ' + data.sensorCode);
                     if (alerts.length > 0) {
+                        console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
                         console.log(JSON.stringify(alerts));
                     }
 
