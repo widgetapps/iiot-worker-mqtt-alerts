@@ -220,6 +220,8 @@ function handleData(data, topicId) {
                             // If there's a value, check the alertGroups
                             if (value !== null) {
                                 console.log('A ' + limitString + ' limit has been exceeded: ' + value);
+                                console.log('Alert group codes to send to: ' + alert.alertGroupCodes);
+                                console.log('Client alert groups: ' + device.client.alertGroups);
 
                                 _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
                                     let alertGroup = _.find(device.client.alertGroups, ['code', alertGroupCode]);
