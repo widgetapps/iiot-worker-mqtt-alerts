@@ -221,10 +221,10 @@ function handleData(data, topicId) {
                             if (value !== null) {
                                 console.log('A ' + limitString + ' limit has been exceeded: ' + value);
                                 console.log('Alert group codes to send to: ' + alert.alertGroupCodes);
-                                console.log('Client alert groups: ' + device.client.alertGroups);
+                                console.log('Client alert groups: ' + alerts.client.alertGroups);
 
                                 _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
-                                    let alertGroup = _.find(device.client.alertGroups, ['code', alertGroupCode]);
+                                    let alertGroup = _.find(alerts.client.alertGroups, ['code', alertGroupCode]);
 
                                     if (alertGroup) {
                                         _.forEach(alertGroup.contacts, function (contact) {
