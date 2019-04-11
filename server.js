@@ -185,7 +185,7 @@ function handleData(data, topicId) {
                     let numbers = [];
 
                     console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
-                    console.log(JSON.stringify(alerts.limits));
+
                     // console.log(JSON.stringify(alerts));
 
                     // Loop through found alerts
@@ -204,6 +204,7 @@ function handleData(data, topicId) {
                         console.log('Timeout: ' + timeout.format());
                         console.log('Now: ' + moment(new Date()).format());
                         console.log('Data: ' + data.min + '/' + data.max);
+                        console.log('Limits: ' + JSON.stringify(alert.limits));
 
                         // Check if the message timeout has passed
                         if (moment(new Date()).isAfter(timeout)) {
@@ -274,7 +275,7 @@ function sendMessages(numbers, asset, sensor, value, limitString) {
 
     console.log('SMS to ' + JSON.stringify(numbers));
     console.log('MESSAGE: ' + body);
-    /*
+
     let notification = service.notifications
         .create({
             toBinding: bindings,
@@ -286,7 +287,7 @@ function sendMessages(numbers, asset, sensor, value, limitString) {
         .catch(err => {
             console.error(err);
         });
-        */
+
 }
 
 /**
