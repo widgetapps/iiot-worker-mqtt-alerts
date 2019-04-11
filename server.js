@@ -14,6 +14,8 @@ let config = require('./config'),
     Device   = require('@terepac/terepac-models').Device,
     Alert    = require('@terepac/terepac-models').Alert;
 
+let mandrillClient = mandrill.Mandrill(config.mandrill.apiKey);
+
 mongoose.Promise = global.Promise;
 
 let conn = mongoose.connection;
@@ -313,7 +315,6 @@ function sendMessages(numbers, emails, asset, sensor, value, limitString) {
 }
 
 function sendEmails(emails, asset, sensor, value, limitString) {
-    let mandrillClient = mandrill.Mandrill(config.mandrill.apiKey);
 
     let async = false;
     let ip_pool = "Main Pool";
