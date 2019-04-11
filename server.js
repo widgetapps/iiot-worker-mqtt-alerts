@@ -89,7 +89,7 @@ client.on('message', function (topic, message) {
         type = topics[2];
     }
 
-    console.log('Message received: ' + topicId + ':' + type);
+    // console.log('Message received: ' + topicId + ':' + type);
 
     // console.log('Message from device ' + deviceId + ' of type ' + type);
 
@@ -174,8 +174,6 @@ function handleData(data, topicId) {
                 return;
             }
 
-            console.log('Device found: ' + device._id);
-
             Alert.find({assets: device.asset._id, sensorCode: data.sensorCode})
                 .populate('client')
                 .exec(function (err, alerts) {
@@ -183,7 +181,7 @@ function handleData(data, topicId) {
                         return;
                     }
 
-                    console.log('Alerts found: ' + alerts.length);
+                    console.log(alerts.length + ' alerts found for device ' + device._id + ' with sensor code ' + data.sensorCode);
 
                     let value, limitString;
                     let numbers = [];
