@@ -206,6 +206,7 @@ function handleData(data, topicId) {
 
                         // Check if the message timeout has passed
                         if (moment(new Date()).isAfter(timeout)) {
+                            console.log('Timeout for alert exceeded.');
                             // Check if an alert limit has been exceeded
                             if (data.min < alert.limits.low) {
                                 value = data.min;
@@ -213,10 +214,13 @@ function handleData(data, topicId) {
                             } else if (data.max > alert.limits.high) {
                                 value = data.max;
                                 limitString = 'maximum';
+                            } else {
+                                value = null;
                             }
 
                             // If there's a value, check the alertGroups
-                            if (value) {
+                            if (value !== null) {
+                                console.log('A ' + limitString + ' limit has been exceeded: ' + value);
 
                                 _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
                                     let alertGroup = _.find(device.client.alertGroups, ['code', alertGroupCode]);
