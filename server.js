@@ -184,7 +184,7 @@ function handleData(data, topicId) {
                     let value, limitString;
                     let numbers = [];
 
-                    console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
+                    //console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
 
                     // console.log(JSON.stringify(alerts));
 
@@ -200,11 +200,11 @@ function handleData(data, topicId) {
                         }
                         // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
-                        console.log('Last Sent: ' + lastSent.format());
-                        console.log('Timeout: ' + timeout.format());
-                        console.log('Now: ' + moment(new Date()).format());
-                        console.log('Data: ' + data.min + '/' + data.max);
-                        console.log('Limits: ' + JSON.stringify(alert.limits));
+                        //console.log('Last Sent: ' + lastSent.format());
+                        //console.log('Timeout: ' + timeout.format());
+                        //console.log('Now: ' + moment(new Date()).format());
+                        //console.log('Data: ' + data.min + '/' + data.max);
+                        //console.log('Limits: ' + JSON.stringify(alert.limits));
 
                         // Check if the message timeout has passed
                         if (moment(new Date()).isAfter(timeout)) {
@@ -273,8 +273,8 @@ function sendMessages(numbers, asset, sensor, value, limitString) {
 
     const body ='Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value;
 
-    console.log('SMS to ' + JSON.stringify(numbers));
-    console.log('MESSAGE: ' + body);
+    //console.log('SMS to ' + JSON.stringify(numbers));
+    //console.log('MESSAGE: ' + body);
 
     let notification = service.notifications
         .create({
