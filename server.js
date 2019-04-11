@@ -175,31 +175,34 @@ function handleData(data, topicId) {
             }
 
             Alert.find({assets: device.asset._id, sensorCode: data.sensorCode})
-                .populate('client')
+                .populate('client', {alertGroups: 1})
                 .exec(function (err, alerts) {
-                    if (!alerts || err) {
+                    if (!alerts || alerts.length === 0 || err) {
                         return;
-                    }
-
-                    if (alerts.length > 0) {
-                        console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
-                        console.log(JSON.stringify(alerts));
                     }
 
                     let value, limitString;
                     let numbers = [];
 
+                    console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
+                    console.log(JSON.stringify(alerts));
+
+                    // Loop through found alerts
                     _.forEach(alerts, function (alert) {
                         let lastSent, timeout;
 
+                        // If there's no lastSent date in the DB, add one in the past, otherwise get it.
                         if (!alert.lastSent) {
                             lastSent = moment(new Date()).subtract(alert.frequencyMinutes + 5, 'm');
                         } else {
                             lastSent = new Date(alert.lastSent);
                         }
+                        // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
 
+                        // Check if the message timeout has passed
                         if (moment(new Date()).isAfter(timeout)) {
+                            // Check if an alert limit has been exceeded
                             if (data.min < alert.limits.low) {
                                 value = data.min;
                                 limitString = 'minimum';
@@ -208,6 +211,7 @@ function handleData(data, topicId) {
                                 limitString = 'maximum';
                             }
 
+                            // If there's a value, check the alertGroups
                             if (value) {
 
                                 _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
