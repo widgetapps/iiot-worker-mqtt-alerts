@@ -195,13 +195,13 @@ function handleData(data, topicId) {
                         if (!alert.lastSent) {
                             lastSent = moment(new Date()).subtract(alert.frequencyMinutes + 5, 'm');
                         } else {
-                            lastSent = new Date(alert.lastSent);
+                            lastSent = moment(new Date(alert.lastSent));
                         }
                         // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
-                        console.log('Last Sent: ' + lastSent);
-                        console.log('Timeout: ' + timeout);
-                        console.log('Now: ' + moment(new Date()));
+                        console.log('Last Sent: ' + lastSent.format());
+                        console.log('Timeout: ' + timeout.format());
+                        console.log('Now: ' + moment(new Date()).format());
                         console.log('Data: ' + data.min + '/' + data.max);
 
                         // Check if the message timeout has passed
