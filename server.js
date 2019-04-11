@@ -185,7 +185,8 @@ function handleData(data, topicId) {
                     let numbers = [];
 
                     console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
-                    console.log(JSON.stringify(alerts));
+                    console.log(JSON.stringify(alerts.limits));
+                    // console.log(JSON.stringify(alerts));
 
                     // Loop through found alerts
                     _.forEach(alerts, function (alert) {
@@ -199,9 +200,9 @@ function handleData(data, topicId) {
                         }
                         // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
-                        console.log('Last Sent: ' + lastSent.format());
-                        console.log('Timeout: ' + timeout.format());
-                        console.log('Now: ' + moment(new Date()).format());
+                        //console.log('Last Sent: ' + lastSent.format());
+                        //console.log('Timeout: ' + timeout.format());
+                        //console.log('Now: ' + moment(new Date()).format());
                         console.log('Data: ' + data.min + '/' + data.max);
 
                         // Check if the message timeout has passed
@@ -219,9 +220,9 @@ function handleData(data, topicId) {
 
                             // If there's a value, check the alertGroups
                             if (value !== null) {
-                                console.log('A ' + limitString + ' limit has been exceeded: ' + value);
-                                console.log('Alert group codes to send to: ' + alert.alertGroupCodes);
-                                console.log('Client alert groups: ' + alert.client.alertGroups);
+                                //console.log('A ' + limitString + ' limit has been exceeded: ' + value);
+                                //console.log('Alert group codes to send to: ' + alert.alertGroupCodes);
+                                //console.log('Client alert groups: ' + alert.client.alertGroups);
 
                                 _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
                                     let alertGroup = _.find(alert.client.alertGroups, ['code', alertGroupCode]);
@@ -241,7 +242,7 @@ function handleData(data, topicId) {
                     });
 
                     if (numbers.length > 0) {
-                        console.log('Sending SMS to these numbers: ' + JSON.stringify(numbers));
+                        //console.log('Sending SMS to these numbers: ' + JSON.stringify(numbers));
                         // Update lastSent & lastValue in alert
                         Alert.updateMany(
                             {assets: device.asset._id, sensorCode: data.sensorCode},
@@ -271,7 +272,7 @@ function sendMessages(numbers, asset, sensor, value, limitString) {
 
     const body ='Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value;
 
-    console.log('SMS to ' + numbers);
+    console.log('SMS to ' + JSON.stringify(numbers));
     console.log('MESSAGE: ' + body);
     /*
     let notification = service.notifications
