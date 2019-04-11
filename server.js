@@ -206,7 +206,6 @@ function handleData(data, topicId) {
 
                         // Check if the message timeout has passed
                         if (moment(new Date()).isAfter(timeout)) {
-                            console.log('Timeout for alert exceeded.');
                             // Check if an alert limit has been exceeded
                             if (data.min < alert.limits.low) {
                                 value = data.min;
@@ -240,6 +239,7 @@ function handleData(data, topicId) {
                     });
 
                     if (numbers.length > 0) {
+                        console.log('Sending SMS to these numbers: ' + JSON.stringify(numbers));
                         // Update lastSent & lastValue in alert
                         Alert.updateMany(
                             {assets: device.asset._id, sensorCode: data.sensorCode},
