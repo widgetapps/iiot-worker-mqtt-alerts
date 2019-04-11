@@ -174,12 +174,17 @@ function handleData(data, topicId) {
                 return;
             }
 
+            console.log('Device found: ' + device._id);
+
             Alert.find({assets: device.asset._id, sensorCode: data.sensorCode})
                 .populate('client')
                 .exec(function (err, alerts) {
                     if (!alerts || err) {
                         return;
                     }
+
+                    console.log('Alerts found: ' + alerts.length);
+
                     let value, limitString;
                     let numbers = [];
 
