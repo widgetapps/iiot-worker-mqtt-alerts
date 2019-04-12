@@ -264,7 +264,7 @@ function handleData(data, topicId) {
                                 }
                             },
                         ).exec(function(err, updateAlert) {
-                            sendMessages(numbers, emails, device.asset.name, data.sensorCode, value, limitString);
+                            sendMessages(numbers, emails, device, data.sensorCode, value, limitString);
                         });
                     }
                 });
@@ -272,7 +272,7 @@ function handleData(data, topicId) {
         });
 }
 
-function sendMessages(numbers, emails, asset, sensor, value, limitString) {
+function sendMessages(numbers, emails, device, sensor, value, limitString) {
 
     if (numbers.length > 0) {
 
@@ -283,7 +283,7 @@ function sendMessages(numbers, emails, asset, sensor, value, limitString) {
             return JSON.stringify({ binding_type: 'sms', address: number });
         });
 
-        const body ='Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value;
+        const body ='Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value;
 
         //console.log('SMS to ' + JSON.stringify(numbers));
         //console.log('MESSAGE: ' + body);
@@ -296,39 +296,51 @@ function sendMessages(numbers, emails, asset, sensor, value, limitString) {
             .then(() => {
                 console.log(notification);
                 if (emails.length > 0) {
-                    sendEmails(emails, asset, sensor, value, limitString);
+                    sendEmails(emails, device, sensor, value, limitString);
                 }
             })
             .catch(err => {
                 console.error(err);
                 if (emails.length > 0) {
-                    sendEmails(emails, asset, sensor, value, limitString);
+                    sendEmails(emails, device, sensor, value, limitString);
                 }
             });
 
     } else {
         if (emails.length > 0) {
-            sendEmails(emails, asset, sensor, value, limitString);
+            sendEmails(emails, device, sensor, value, limitString);
         }
     }
 
 }
 
-function sendEmails(emails, asset, sensor, value, limitString) {
+function sendEmails(emails, device, sensor, value, limitString) {
 
     let async = false;
     let ip_pool = "Main Pool";
     let send_at = "2019-01-01 00:00:00";
 
+    let fromEmail = 'alerts@terepac.one';
+    let replyEmail = 'support@terepac.one';
+    let fromName = 'ONE Platform';
+    let subjectPrefix = '[ONE Platform Alert] ';
+
+    if (device.type === 'hydrant') {
+        fromEmail = 'alerts@terepac.one';
+        replyEmail = 'support@terepac.one';
+        fromName = 'Digital Water Solutions';
+        subjectPrefix = '[DWS Alert] ';
+    }
+
     let message = {
-        html: '<p>Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value + '</p>',
-        text: 'Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value,
-        subject: '[Alert] Threshold exceeded',
-        from_email: 'alerts@terepac.one',
-        from_name: 'ONE Platform',
+        html: '<p>Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value + '</p>',
+        text: 'Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value,
+        subject: subjectPrefix + 'Threshold exceeded',
+        from_email: fromEmail,
+        from_name: fromName,
         to: emails,
         headers: {
-            'Reply-To': 'support@terepac.one'
+            'Reply-To': replyEmail
         },
         important: true,
         track_opens: false,
