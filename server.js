@@ -186,7 +186,7 @@ function handleData(data, topicId) {
 
                     let value, limitString;
                     let numbers = [],
-                        emails = [{email: 'darryl.patterson@terepac.com', name: 'Darryl'}];
+                        emails = [];
 
                     //console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
 
