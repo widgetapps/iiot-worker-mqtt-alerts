@@ -56,13 +56,13 @@ client.on('connect', function () {
     console.log('Connected to MQTT server.');
     // Subscribe to hydrant pubs
     client.subscribe([
-        '+/v1/pressure',
-        '+/v1/temperature',
-        '+/v1/battery',
-        '+/v1/rssi',
-        '+/gateway/v1/humidity',
-        '+/gateway/v1/temperature',
-        '+/gateway/v1/vibration'
+        '$share/alerts/+/v1/pressure',
+        '$share/alerts/+/v1/temperature',
+        '$share/alerts/+/v1/battery',
+        '$share/alerts/+/v1/rssi',
+        '$share/alerts/+/gateway/v1/humidity',
+        '$share/alerts/+/gateway/v1/temperature',
+        '$share/alerts/+/gateway/v1/vibration'
     ], {qos: 2});
 });
 
