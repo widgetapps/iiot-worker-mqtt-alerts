@@ -318,7 +318,7 @@ function sendEmails(emails, asset, sensor, value, limitString) {
 
     let async = false;
     let ip_pool = "Main Pool";
-    let send_at = "example send_at";
+    let send_at = "2019-01-01 00:00:00";
 
     let message = {
         html: '<p>Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + asset + '. VALUE: ' + value + '</p>',
@@ -343,7 +343,7 @@ function sendEmails(emails, asset, sensor, value, limitString) {
         async: true
     };
 
-    mandrillClient.messages.send({"message": message, "async": async, "ip_pool": ip_pool}, function(result) {
+    mandrillClient.messages.send({"message": message, "async": async, "ip_pool": ip_pool, 'send_at': send_at}, function(result) {
         console.log(result);
     }, function(e) {
         // Mandrill returns the error as an object with name and message keys
