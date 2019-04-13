@@ -326,8 +326,8 @@ function sendEmails(emails, device, sensor, value, limitString) {
     let subjectPrefix = '[ONE Platform Alert] ';
 
     if (device.type === 'hydrant') {
-        fromEmail = 'alerts@terepac.one';
-        replyEmail = 'support@terepac.one';
+        fromEmail = 'info@digitalwater.solutions';
+        replyEmail = 'info@digitalwater.solutions';
         fromName = 'Digital Water Solutions';
         subjectPrefix = '[DWS Alert] ';
     }
