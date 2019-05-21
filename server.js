@@ -12,7 +12,8 @@ let config = require('./config'),
     cbor = require('cbor'),
     moment = require('moment'),
     Device   = require('@terepac/terepac-models').Device,
-    Alert    = require('@terepac/terepac-models').Alert;
+    Alert    = require('@terepac/terepac-models').Alert,
+    Message  = require('@terepac/terapac-modesl').Message;
 
 let mandrillClient = new mandrill.Mandrill(config.mandrill.apiKey);
 
@@ -151,6 +152,12 @@ client.on('message', function (topic, message) {
                 data.min     = decoded.min;
                 data.max     = decoded.max;
                 break;
+            case 'hydrophone-summary':
+                data.sensorType = 12;
+                data.sensorCode = 'OI';
+                data.min     = decoded.rms;
+                data.max     = decoded.rms;
+                break;
         }
         handleData(data, topicId);
     });
@@ -177,7 +184,7 @@ function handleData(data, topicId) {
                 return;
             }
 
-            Alert.find({assets: device.asset._id, sensorCode: data.sensorCode})
+            Alert.find({assets: device.asset._id, sensorCode: data.sensorCode, active: true})
                 .populate('client', {alertGroups: 1})
                 .exec(function (err, alerts) {
                     if (!alerts || alerts.length === 0 || err) {
@@ -186,7 +193,8 @@ function handleData(data, topicId) {
 
                     let value, limitString;
                     let numbers = [],
-                        emails = [];
+                        emails = [],
+                        messages = [];
 
                     //console.log(alerts.length + ' alert(s) found for device/topicId ' + device._id + '/' + topicId + ' with sensor code ' + data.sensorCode);
 
@@ -243,6 +251,18 @@ function handleData(data, topicId) {
                                                     name: contact.name
                                                 });
                                             }
+                                            if(contact.user.send) {
+                                                messages.push({
+                                                    created: new Date(),
+                                                    updated:  new Date(),
+                                                    subject: 'Threshold exceeded',
+                                                    content: 'Threshold ' + limitString + ' exceeded for ' + data.sensorCode + ' on asset ' + device.asset.name + '. VALUE: ' + value,
+                                                    priority: 'alert',
+                                                    'viewed.isViewed': false,
+                                                    client: alerts.client,
+                                                    user: contact.user.id
+                                                });
+                                            }
                                         });
                                     }
                                 });
@@ -264,7 +284,7 @@ function handleData(data, topicId) {
                                 }
                             },
                         ).exec(function(err, updateAlert) {
-                            sendMessages(numbers, emails, device, data.sensorCode, value, limitString);
+                            sendMessages(numbers, emails, messages, device, data.sensorCode, value, limitString);
                         });
                     }
                 });
@@ -272,7 +292,7 @@ function handleData(data, topicId) {
         });
 }
 
-function sendMessages(numbers, emails, device, sensor, value, limitString) {
+function sendMessages(numbers, emails, messages, device, sensor, value, limitString) {
 
     if (numbers.length > 0) {
 
@@ -283,7 +303,7 @@ function sendMessages(numbers, emails, device, sensor, value, limitString) {
             return JSON.stringify({ binding_type: 'sms', address: number });
         });
 
-        const body ='Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value;
+        const body = 'Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value;
 
         //console.log('SMS to ' + JSON.stringify(numbers));
         //console.log('MESSAGE: ' + body);
@@ -296,71 +316,85 @@ function sendMessages(numbers, emails, device, sensor, value, limitString) {
             .then(() => {
                 console.log(notification);
                 if (emails.length > 0) {
-                    sendEmails(emails, device, sensor, value, limitString);
+                    sendEmails(emails, messages, device, sensor, value, limitString);
                 }
             })
             .catch(err => {
                 console.error(err);
                 if (emails.length > 0) {
-                    sendEmails(emails, device, sensor, value, limitString);
+                    sendEmails(emails, messages, device, sensor, value, limitString);
                 }
             });
 
     } else {
         if (emails.length > 0) {
-            sendEmails(emails, device, sensor, value, limitString);
+            sendEmails(emails, messages, device, sensor, value, limitString);
         }
     }
 
 }
 
-function sendEmails(emails, device, sensor, value, limitString) {
+function sendEmails(emails, messages, device, sensor, value, limitString) {
 
-    let async = false;
-    let ip_pool = "Main Pool";
-    let send_at = "2019-01-01 00:00:00";
+    if (emails.length > 0) {
 
-    let fromEmail = 'alerts@terepac.one';
-    let replyEmail = 'support@terepac.one';
-    let fromName = 'ONE Platform';
-    let subjectPrefix = '[ONE Platform Alert] ';
+        let async = false;
+        let ip_pool = "Main Pool";
+        let send_at = "2019-01-01 00:00:00";
 
-    if (device.type === 'hydrant') {
-        fromEmail = 'info@digitalwater.solutions';
-        replyEmail = 'info@digitalwater.solutions';
-        fromName = 'Digital Water Solutions';
-        subjectPrefix = '[DWS Alert] ';
+        let fromEmail = 'alerts@terepac.one';
+        let replyEmail = 'support@terepac.one';
+        let fromName = 'ONE Platform';
+        let subjectPrefix = '[ONE Platform Alert] ';
+
+        if (device.type === 'hydrant') {
+            fromEmail = 'info@digitalwater.solutions';
+            replyEmail = 'info@digitalwater.solutions';
+            fromName = 'Digital Water Solutions';
+            subjectPrefix = '[DWS Alert] ';
+        }
+
+        let message = {
+            html: '<p>Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value + '</p>',
+            text: 'Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value,
+            subject: subjectPrefix + 'Threshold exceeded',
+            from_email: fromEmail,
+            from_name: fromName,
+            to: emails,
+            headers: {
+                'Reply-To': replyEmail
+            },
+            important: true,
+            track_opens: false,
+            track_clicks: false,
+            auto_text: false,
+            auto_html: false,
+            inline_css: true,
+            url_strip_qs: false,
+            preserve_recipients: false,
+            view_content_link: false,
+            merge: true,
+            async: true
+        };
+
+        mandrillClient.messages.send({"message": message, "async": async, "ip_pool": ip_pool, 'send_at': send_at}, function(result) {
+            console.log(result);
+            if (messages.length > 0) {
+                Message.insert(messages, function(insertResult) {
+                    console.log('INSERTED MESSAGES: ' + insertResult.nInserted);
+                })
+            }
+        }, function(e) {
+            // Mandrill returns the error as an object with name and message keys
+            console.log('A mandrill error occurred: ' + e.name + ' - ' + e.message);
+        });
+    } else {
+        if (messages.length > 0) {
+            Message.insert(messages, function(insertResult) {
+                console.log('INSERTED MESSAGES: ' + insertResult.nInserted);
+            })
+        }
     }
-
-    let message = {
-        html: '<p>Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value + '</p>',
-        text: 'Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value,
-        subject: subjectPrefix + 'Threshold exceeded',
-        from_email: fromEmail,
-        from_name: fromName,
-        to: emails,
-        headers: {
-            'Reply-To': replyEmail
-        },
-        important: true,
-        track_opens: false,
-        track_clicks: false,
-        auto_text: false,
-        auto_html: false,
-        inline_css: true,
-        url_strip_qs: false,
-        preserve_recipients: false,
-        view_content_link: false,
-        merge: true,
-        async: true
-    };
-
-    mandrillClient.messages.send({"message": message, "async": async, "ip_pool": ip_pool, 'send_at': send_at}, function(result) {
-        console.log(result);
-    }, function(e) {
-        // Mandrill returns the error as an object with name and message keys
-        console.log('A mandrill error occurred: ' + e.name + ' - ' + e.message);
-    });
 }
 
 /**
