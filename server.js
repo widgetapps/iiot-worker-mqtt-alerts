@@ -13,7 +13,7 @@ let config = require('./config'),
     moment = require('moment'),
     Device   = require('@terepac/terepac-models').Device,
     Alert    = require('@terepac/terepac-models').Alert,
-    Message  = require('@terepac/terapac-modesl').Message;
+    Message  = require('@terepac/terapac-models').Message;
 
 let mandrillClient = new mandrill.Mandrill(config.mandrill.apiKey);
 
