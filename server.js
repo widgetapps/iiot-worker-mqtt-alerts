@@ -202,7 +202,7 @@ function handleData(data, topicId) {
 
                     // Loop through found alerts
                     _.forEach(alerts, function (alert) {
-                        let lastSent, timeout;
+                        let lastSent, timeout, sendAlert;
 
                         // If there's no lastSent date in the DB, add one in the past, otherwise get it.
                         if (!alert.lastSent) {
@@ -221,18 +221,19 @@ function handleData(data, topicId) {
                         // Check if the message timeout has passed
                         if (moment(new Date()).isAfter(timeout)) {
                             // Check if an alert limit has been exceeded
+                            sendAlert = false;
                             if (data.min < alert.limits.low) {
                                 value = data.min;
                                 limitString = 'minimum';
+                                sendAlert = true;
                             } else if (data.max > alert.limits.high) {
                                 value = data.max;
                                 limitString = 'maximum';
-                            } else {
-                                value = null;
+                                sendAlert = true;
                             }
 
-                            // If there's a value, check the alertGroups
-                            if (value !== null) {
+                            // If an alert needs to be sent, check the alertGroups
+                            if (sendAlert) {
                                 //console.log('A ' + limitString + ' limit has been exceeded: ' + value);
                                 //console.log('Alert group codes to send to: ' + alert.alertGroupCodes);
                                 //console.log('Client alert groups: ' + alert.client.alertGroups);
@@ -272,7 +273,7 @@ function handleData(data, topicId) {
 
                     });
 
-                    if (numbers.length > 0) {
+                    if (numbers.length > 0 || emails.length > 0) {
                         //console.log('Sending SMS to these numbers: ' + JSON.stringify(numbers));
                         // Update lastSent & lastValue in alert
                         Alert.updateMany(
