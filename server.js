@@ -217,6 +217,7 @@ function handleData(data, topicId) {
                             console.log(
                                 '******\n' +
                                 'Alert data for hydrophone RMS Summary:\n' +
+                                'Alert name: ' + alert.name + '\n' +
                                 'Last Sent: ' + lastSent.format() + '\n' +
                                 'Timeout: ' + timeout.format() + '\n' +
                                 'Now: ' + moment(new Date()).format() + '\n' +
