@@ -212,6 +212,19 @@ function handleData(data, topicId) {
                         }
                         // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
+
+                        if (data.sensorType === 'OI') {
+                            console.log(
+                                '******\n' +
+                                'Alert data for hydrophone RMS Summary:\n' +
+                                'Last Sent: ' + lastSent.format() + '\n' +
+                                'Timeout: ' + timeout.format() + '\n' +
+                                'Now: ' + moment(new Date()).format() + '\n' +
+                                'Data: ' + data.min + '/' + data.max + '\n' +
+                                'Limits: ' + JSON.stringify(alert.limits) +'\n' +
+                                '******'
+                            );
+                        }
                         //console.log('Last Sent: ' + lastSent.format());
                         //console.log('Timeout: ' + timeout.format());
                         //console.log('Now: ' + moment(new Date()).format());
