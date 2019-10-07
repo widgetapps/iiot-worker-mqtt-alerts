@@ -329,7 +329,7 @@ function sendMessages(numbers, emails, messages, device, sensor, value, limitStr
                 body: body
             })
             .then(() => {
-                console.log(notification);
+                //console.log(notification);
                 if (emails.length > 0) {
                     sendEmails(emails, messages, device, sensor, value, limitString);
                 }
@@ -393,7 +393,7 @@ function sendEmails(emails, messages, device, sensor, value, limitString) {
         };
 
         mandrillClient.messages.send({"message": message, "async": async, "ip_pool": ip_pool, 'send_at': send_at}, function(result) {
-            console.log(result);
+            //console.log(result);
             if (messages.length > 0) {
                 Message.insert(messages, function(insertResult) {
                     console.log('INSERTED MESSAGES: ' + insertResult.nInserted);
