@@ -213,7 +213,7 @@ function handleData(data, topicId) {
                         // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
 
-                        if (data.sensorType === 'OI') {
+                        if (data.sensorCode === 'OI') {
                             console.log(
                                 '******\n' +
                                 'Alert data for hydrophone RMS Summary:\n' +
