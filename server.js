@@ -174,13 +174,13 @@ function handleData(data, topicId) {
             }
 
             if (!device || err) {
-                console.log('Device not found');
+                console.log('Device not found. topicId: ' + topicId);
                 return;
             }
 
             if (!device.asset || device.asset === null) {
                 // Device not assigned to an asset
-                console.log('Device not assigned to an asset.');
+                console.log('Device not assigned to an asset. device ID: ' + device._id);
                 return;
             }
 
