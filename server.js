@@ -97,7 +97,7 @@ client.on('message', function (topic, message) {
 
     // console.log('Message from device ' + deviceId + ' of type ' + type);
 
-    let validTypes = ['pressure', 'temperature', 'battery', 'rssi', 'humidity', 'vibration'];
+    let validTypes = ['pressure', 'temperature', 'battery', 'rssi', 'humidity', 'vibration', 'hydrophone-summary'];
 
     if (!_.includes(validTypes, type)) {
         return;
@@ -213,6 +213,7 @@ function handleData(data, topicId) {
                         // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
 
+                        /*
                         if (data.sensorCode === 'OI') {
                             console.log(
                                 '******\n' +
@@ -226,6 +227,8 @@ function handleData(data, topicId) {
                                 '******'
                             );
                         }
+                        */
+
                         //console.log('Last Sent: ' + lastSent.format());
                         //console.log('Timeout: ' + timeout.format());
                         //console.log('Now: ' + moment(new Date()).format());
