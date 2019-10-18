@@ -61,6 +61,7 @@ client.on('connect', function () {
         '$share/alerts/+/v1/temperature',
         '$share/alerts/+/v1/battery',
         '$share/alerts/+/v1/rssi',
+        '$share/alerts/+/v1/hydrophone-summary',
         '$share/alerts/+/gateway/v1/humidity',
         '$share/alerts/+/gateway/v1/temperature',
         '$share/alerts/+/gateway/v1/vibration'
