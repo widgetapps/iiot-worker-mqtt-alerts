@@ -214,22 +214,6 @@ function handleData(data, topicId) {
                         // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
 
-
-                        if (data.sensorCode === 'OI') {
-                            console.log(
-                                '******\n' +
-                                'Alert data for hydrophone RMS Summary:\n' +
-                                'Alert name: ' + alert.name + '\n' +
-                                'Last Sent: ' + lastSent.format() + '\n' +
-                                'Timeout: ' + timeout.format() + '\n' +
-                                'Now: ' + moment(new Date()).format() + '\n' +
-                                'Data: ' + data.min + '/' + data.max + '\n' +
-                                'Limits: ' + JSON.stringify(alert.limits) +'\n' +
-                                '******'
-                            );
-                        }
-
-
                         //console.log('Last Sent: ' + lastSent.format());
                         //console.log('Timeout: ' + timeout.format());
                         //console.log('Now: ' + moment(new Date()).format());
@@ -252,9 +236,21 @@ function handleData(data, topicId) {
 
                             // If an alert needs to be sent, check the alertGroups
                             if (sendAlert) {
-                                //console.log('A ' + limitString + ' limit has been exceeded: ' + value);
-                                //console.log('Alert group codes to send to: ' + alert.alertGroupCodes);
-                                //console.log('Client alert groups: ' + alert.client.alertGroups);
+
+                                console.log(
+                                    '******\n' +
+                                    'An alert has been triggered::\n' +
+                                    'Alert name: ' + alert.name + '\n' +
+                                    'Last Sent: ' + lastSent.format() + '\n' +
+                                    'Timeout: ' + timeout.format() + '\n' +
+                                    'Now: ' + moment(new Date()).format() + '\n' +
+                                    'Data: ' + data.min + '/' + data.max + '\n' +
+                                    'Limits: ' + JSON.stringify(alert.limits) +'\n' +
+                                    'Alert text: A ' + limitString + ' limit has been exceeded: ' + value +
+                                    'Alert group codes to send to: ' + alert.alertGroupCodes +
+                                    'Client alert groups: ' + alert.client.alertGroups +
+                                    '******'
+                                );
 
                                 _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
                                     let alertGroup = _.find(alert.client.alertGroups, ['code', alertGroupCode]);
