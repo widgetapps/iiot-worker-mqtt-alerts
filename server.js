@@ -61,6 +61,7 @@ client.on('connect', function () {
         '$share/alerts/+/v1/temperature',
         '$share/alerts/+/v1/battery',
         '$share/alerts/+/v1/rssi',
+        '$share/alerts/+/v1/hydrophone-summary',
         '$share/alerts/+/gateway/v1/humidity',
         '$share/alerts/+/gateway/v1/temperature',
         '$share/alerts/+/gateway/v1/vibration'
@@ -97,7 +98,7 @@ client.on('message', function (topic, message) {
 
     // console.log('Message from device ' + deviceId + ' of type ' + type);
 
-    let validTypes = ['pressure', 'temperature', 'battery', 'rssi', 'humidity', 'vibration'];
+    let validTypes = ['pressure', 'temperature', 'battery', 'rssi', 'humidity', 'vibration', 'hydrophone-summary'];
 
     if (!_.includes(validTypes, type)) {
         return;
@@ -174,13 +175,13 @@ function handleData(data, topicId) {
             }
 
             if (!device || err) {
-                console.log('Device not found');
+                console.log('Device not found. topicId: ' + topicId);
                 return;
             }
 
             if (!device.asset || device.asset === null) {
                 // Device not assigned to an asset
-                console.log('Device not assigned to an asset.');
+                console.log('Device not assigned to an asset. device ID: ' + device._id);
                 return;
             }
 
@@ -202,7 +203,7 @@ function handleData(data, topicId) {
 
                     // Loop through found alerts
                     _.forEach(alerts, function (alert) {
-                        let lastSent, timeout;
+                        let lastSent, timeout, sendAlert;
 
                         // If there's no lastSent date in the DB, add one in the past, otherwise get it.
                         if (!alert.lastSent) {
@@ -212,6 +213,7 @@ function handleData(data, topicId) {
                         }
                         // Calculate the timeout date
                         timeout = moment(lastSent).add(alert.frequencyMinutes, 'm');
+
                         //console.log('Last Sent: ' + lastSent.format());
                         //console.log('Timeout: ' + timeout.format());
                         //console.log('Now: ' + moment(new Date()).format());
@@ -221,21 +223,34 @@ function handleData(data, topicId) {
                         // Check if the message timeout has passed
                         if (moment(new Date()).isAfter(timeout)) {
                             // Check if an alert limit has been exceeded
+                            sendAlert = false;
                             if (data.min < alert.limits.low) {
                                 value = data.min;
                                 limitString = 'minimum';
+                                sendAlert = true;
                             } else if (data.max > alert.limits.high) {
                                 value = data.max;
                                 limitString = 'maximum';
-                            } else {
-                                value = null;
+                                sendAlert = true;
                             }
 
-                            // If there's a value, check the alertGroups
-                            if (value !== null) {
-                                //console.log('A ' + limitString + ' limit has been exceeded: ' + value);
-                                //console.log('Alert group codes to send to: ' + alert.alertGroupCodes);
-                                //console.log('Client alert groups: ' + alert.client.alertGroups);
+                            // If an alert needs to be sent, check the alertGroups
+                            if (sendAlert) {
+
+                                console.log(
+                                    '******\n' +
+                                    'An alert has been triggered::\n' +
+                                    'Alert name: ' + alert.name + '\n' +
+                                    'Last Sent: ' + lastSent.format() + '\n' +
+                                    'Timeout: ' + timeout.format() + '\n' +
+                                    'Now: ' + moment(new Date()).format() + '\n' +
+                                    'Data: ' + data.min + '/' + data.max + '\n' +
+                                    'Limits: ' + JSON.stringify(alert.limits) +'\n' +
+                                    'Alert text: A ' + limitString + ' limit has been exceeded: ' + value +
+                                    'Alert group codes to send to: ' + alert.alertGroupCodes +
+                                    'Client alert groups: ' + alert.client.alertGroups +
+                                    '******'
+                                );
 
                                 _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
                                     let alertGroup = _.find(alert.client.alertGroups, ['code', alertGroupCode]);
@@ -272,7 +287,7 @@ function handleData(data, topicId) {
 
                     });
 
-                    if (numbers.length > 0) {
+                    if (numbers.length > 0 || emails.length > 0) {
                         //console.log('Sending SMS to these numbers: ' + JSON.stringify(numbers));
                         // Update lastSent & lastValue in alert
                         Alert.updateMany(
@@ -314,7 +329,7 @@ function sendMessages(numbers, emails, messages, device, sensor, value, limitStr
                 body: body
             })
             .then(() => {
-                console.log(notification);
+                //console.log(notification);
                 if (emails.length > 0) {
                     sendEmails(emails, messages, device, sensor, value, limitString);
                 }
@@ -378,7 +393,7 @@ function sendEmails(emails, messages, device, sensor, value, limitString) {
         };
 
         mandrillClient.messages.send({"message": message, "async": async, "ip_pool": ip_pool, 'send_at': send_at}, function(result) {
-            console.log(result);
+            //console.log(result);
             if (messages.length > 0) {
                 Message.insert(messages, function(insertResult) {
                     console.log('INSERTED MESSAGES: ' + insertResult.nInserted);
