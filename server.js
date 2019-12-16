@@ -186,13 +186,13 @@ function handleData(data, topicId) {
             }
 
             Alert.find({assets: device.asset._id, sensorCode: data.sensorCode, active: true})
-                .populate('client', {alertGroups: 1})
+                .populate('client', {alertGroups: 1, tagCode: 1})
                 .exec(function (err, alerts) {
                     if (!alerts || alerts.length === 0 || err) {
                         return;
                     }
 
-                    let value, limitString;
+                    let value, limitString, clientTagCode;
                     let numbers = [],
                         emails = [],
                         messages = [];
@@ -236,7 +236,9 @@ function handleData(data, topicId) {
 
                             // If an alert needs to be sent, check the alertGroups
                             if (sendAlert) {
+                                clientTagCode = alert.client.tagCode;
 
+                                /*
                                 console.log(
                                     '******\n' +
                                     'An alert has been triggered::\n' +
@@ -251,6 +253,7 @@ function handleData(data, topicId) {
                                     'Client alert groups: ' + alert.client.alertGroups +
                                     '******'
                                 );
+                                */
 
                                 _.forEach(alert.alertGroupCodes, function (alertGroupCode) {
                                     let alertGroup = _.find(alert.client.alertGroups, ['code', alertGroupCode]);
@@ -299,7 +302,7 @@ function handleData(data, topicId) {
                                 }
                             },
                         ).exec(function(err, updateAlert) {
-                            sendMessages(numbers, emails, messages, device, data.sensorCode, value, limitString);
+                            sendMessages(numbers, emails, messages, device, data.sensorCode, value, limitString, clientTagCode);
                         });
                     }
                 });
@@ -307,7 +310,7 @@ function handleData(data, topicId) {
         });
 }
 
-function sendMessages(numbers, emails, messages, device, sensor, value, limitString) {
+function sendMessages(numbers, emails, messages, device, sensor, value, limitString, clientTagCode) {
 
     if (numbers.length > 0) {
 
@@ -318,7 +321,7 @@ function sendMessages(numbers, emails, messages, device, sensor, value, limitStr
             return JSON.stringify({ binding_type: 'sms', address: number });
         });
 
-        const body = 'Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value;
+        const body = '[' + clientTagCode + '] Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value;
 
         //console.log('SMS to ' + JSON.stringify(numbers));
         //console.log('MESSAGE: ' + body);
@@ -331,25 +334,25 @@ function sendMessages(numbers, emails, messages, device, sensor, value, limitStr
             .then(() => {
                 //console.log(notification);
                 if (emails.length > 0) {
-                    sendEmails(emails, messages, device, sensor, value, limitString);
+                    sendEmails(emails, messages, device, sensor, value, limitString, clientTagCode);
                 }
             })
             .catch(err => {
                 console.error(err);
                 if (emails.length > 0) {
-                    sendEmails(emails, messages, device, sensor, value, limitString);
+                    sendEmails(emails, messages, device, sensor, value, limitString, clientTagCode);
                 }
             });
 
     } else {
         if (emails.length > 0) {
-            sendEmails(emails, messages, device, sensor, value, limitString);
+            sendEmails(emails, messages, device, sensor, value, limitString, clientTagCode);
         }
     }
 
 }
 
-function sendEmails(emails, messages, device, sensor, value, limitString) {
+function sendEmails(emails, messages, device, sensor, value, limitString, clientTagCode) {
 
     if (emails.length > 0) {
 
@@ -360,13 +363,13 @@ function sendEmails(emails, messages, device, sensor, value, limitString) {
         let fromEmail = 'alerts@terepac.one';
         let replyEmail = 'support@terepac.one';
         let fromName = 'ONE Platform';
-        let subjectPrefix = '[ONE Platform Alert] ';
+        let subjectPrefix = '[ONE Platform Alert - ' + clientTagCode + '] ';
 
         if (device.type === 'hydrant') {
             fromEmail = 'info@digitalwater.solutions';
             replyEmail = 'info@digitalwater.solutions';
             fromName = 'Digital Water Solutions';
-            subjectPrefix = '[DWS Alert] ';
+            subjectPrefix = '[DWS Alert- ' + clientTagCode + '] ';
         }
 
         let message = {
