@@ -321,7 +321,7 @@ function sendMessages(numbers, emails, messages, device, sensor, value, limitStr
             return JSON.stringify({ binding_type: 'sms', address: number });
         });
 
-        const body = '[' + clientTagCode + '] Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value;
+        const body = '(' + clientTagCode + ') Threshold ' + limitString + ' exceeded for ' + sensor + ' on asset ' + device.asset.name + '. VALUE: ' + value;
 
         //console.log('SMS to ' + JSON.stringify(numbers));
         //console.log('MESSAGE: ' + body);
