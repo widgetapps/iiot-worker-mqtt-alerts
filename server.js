@@ -21,24 +21,23 @@ mongoose.Promise = global.Promise;
 
 let conn = mongoose.connection;
 conn.on('connecting', function() {
-    console.log('Connecting to MongoDB...');
+    debugLog('Connecting to MongoDB...');
 });
 conn.on('error', function(error) {
     console.error('Error in MongoDB connection: ' + error);
     mongoose.disconnect();
 });
 conn.on('connected', function() {
-    console.log('Connected to MongoDB.');
+    debugLog('Connected to MongoDB.');
 });
 conn.once('open', function() {
-    console.log('Connection to MongoDB open.');
+    debugLog('Connection to MongoDB open.');
 });
 conn.on('reconnected', function () {
-    console.log('Reconnected to MongoDB');
+    debugLog('Reconnected to MongoDB');
 });
 conn.on('disconnected', function() {
-    console.log('Disconnected from MongoDB.');
-    console.log('DB URI is: ' + config.db);
+    debugLog('Disconnected from MongoDB.');
     mongoose.connect(config.db, config.dbOptions);
 });
 
@@ -49,12 +48,12 @@ let client  = mqtt.connect(config.mqtt, config.mqttoptions);
 console.log('Started on IP ' + config.ip + '. NODE_ENV=' + process.env.NODE_ENV);
 
 client.on('error', function (error) {
-    console.log('Error connecting to MQTT Server with username ' + config.mqttoptions.username + ' - ' + error);
+    debugLog('Error connecting to MQTT Server with username ' + config.mqttoptions.username + ' - ' + error);
     process.exit(1);
 });
 
 client.on('connect', function () {
-    console.log('Connected to MQTT server.');
+    debugLog('Connected to MQTT server.');
     // Subscribe to hydrant pubs
     client.subscribe([
         '$share/alerts/+/v1/pressure',
@@ -69,15 +68,15 @@ client.on('connect', function () {
 });
 
 client.on('reconnect', function () {
-    console.log('Reconnecting to MQTT server...');
+    debugLog('Reconnecting to MQTT server...');
 });
 
 client.on('close', function () {
-    console.log('MQTT connection closed.');
+    debugLog('MQTT connection closed.');
 });
 
 client.on('offline', function () {
-    console.log('MQTT client went offline.');
+    debugLog('MQTT client went offline.');
 });
 
 client.on('message', function (topic, message) {
@@ -170,18 +169,18 @@ function handleData(data, topicId) {
         .populate('asset')
         .exec(function (err, device) {
             if (err) {
-                console.log('Error getting device: ' + err);
+                debugLog('Error getting device: ' + err);
                 return;
             }
 
             if (!device || err) {
-                console.log('Device not found. topicId: ' + topicId);
+                debugLog('Device not found. topicId: ' + topicId);
                 return;
             }
 
             if (!device.asset || device.asset === null) {
                 // Device not assigned to an asset
-                console.log('Device not assigned to an asset. device ID: ' + device._id);
+                debugLog('Device not assigned to an asset. device ID: ' + device._id);
                 return;
             }
 
@@ -413,6 +412,11 @@ function sendEmails(emails, messages, device, sensor, value, limitString, client
             })
         }
     }
+}
+
+function debugLog(message) {
+    let date = new Date();
+    console.log(date.toISOString() + ' ' + message);
 }
 
 /**
